@@ -51,8 +51,7 @@ export const analyzeInvoiceImage = async (images: { base64: string, mimeType: st
         parts: [
           ...parts,
           {
-            text:
-              "قم بتحليل صور الفاتورة واستخرج البيانات المطلوبة..."
+            text: "قم بتحليل صور الفاتورة واستخرج البيانات المطلوبة..."
           }
         ]
       },
@@ -63,8 +62,12 @@ export const analyzeInvoiceImage = async (images: { base64: string, mimeType: st
       }
     });
 
-    const text = response.text;
-    if (!text) throw new Error("لم يتم استلام أي بيانات من النموذج.");
+    // 🔥 التعديل المهم هنا:
+    const text = await response.response.text();
+
+    if (!text) {
+      throw new Error("لم يتم استلام أي بيانات من النموذج.");
+    }
 
     return JSON.parse(text);
   } catch (error) {
