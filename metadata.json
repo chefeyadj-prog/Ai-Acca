@@ -1,0 +1,5 @@
+{
+  "name": "محلل الفواتير الذكي",
+  "description": "تطبيق ويب ذكي لتحليل الفواتير واستخراج البيانات باستخدام Gemini AI",
+  "requestFramePermissions": []
+}
