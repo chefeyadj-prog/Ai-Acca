@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { InvoiceData } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: __GEMINI_API_KEY__ });
 
 export const analyzeInvoiceImage = async (images: { base64: string, mimeType: string }[]): Promise<InvoiceData> => {
   const model = "gemini-2.5-flash";
