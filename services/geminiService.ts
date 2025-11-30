@@ -2,11 +2,16 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { InvoiceData } from "../types";
 
 const ai = new GoogleGenAI({
-  apiKey: import.meta.env.VITE_GEMINI_API_KEY
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
 });
 
-export const analyzeInvoiceImage = async (images: { base64: string, mimeType: string }[]): Promise<InvoiceData> => {
+export const analyzeInvoiceImage = async (
+  images: { base64: string; mimeType: string }[]
+): Promise<InvoiceData> => {
   const model = "gemini-2.5-flash";
+
+  // 🔍 تأكد أن المفتاح واصل فعلاً للفرونت
+  console.log("VITE_GEMINI_API_KEY exists?", !!import.meta.env.VITE_GEMINI_API_KEY);
 
   const responseSchema = {
     type: Type.OBJECT,
@@ -28,21 +33,21 @@ export const analyzeInvoiceImage = async (images: { base64: string, mimeType: st
             quantity: { type: Type.NUMBER },
             price: { type: Type.NUMBER },
             tax: { type: Type.NUMBER },
-            total: { type: Type.NUMBER }
+            total: { type: Type.NUMBER },
           },
-          required: ["name", "quantity", "price"]
-        }
-      }
+          required: ["name", "quantity", "price"],
+        },
+      },
     },
-    required: ["companyName", "total", "items"]
+    required: ["companyName", "total", "items"],
   };
 
   try {
-    const parts = images.map(img => ({
+    const parts = images.map((img) => ({
       inlineData: {
         mimeType: img.mimeType,
-        data: img.base64
-      }
+        data: img.base64, // تأكد أن هذا هو الـ base64 بدون "data:image/..;base64,"
+      },
     }));
 
     const response = await ai.models.generateContent({
@@ -51,27 +56,36 @@ export const analyzeInvoiceImage = async (images: { base64: string, mimeType: st
         parts: [
           ...parts,
           {
-            text: "قم بتحليل صور الفاتورة واستخرج البيانات المطلوبة..."
-          }
-        ]
+            text:
+              "قم بتحليل صور الفاتورة واستخرج البيانات المطلوبة باللغة العربية كـ JSON فقط.",
+          },
+        ],
       },
       config: {
         responseMimeType: "application/json",
         responseSchema,
-        temperature: 0.1
-      }
+        temperature: 0.1,
+      },
     });
 
-    // 🔥 التعديل المهم هنا:
-    const text = await response.response.text();
+    // حسب الكود الأصلي من Google AI Studio: response.text هي الخاصية الصحيحة
+    const text = response.text;
+
+    console.log("Raw Gemini response:", text);
 
     if (!text) {
       throw new Error("لم يتم استلام أي بيانات من النموذج.");
     }
 
-    return JSON.parse(text);
-  } catch (error) {
-    console.error("Error analyzing invoice:", error);
-    throw new Error("فشل في تحليل الفاتورة. يرجى التأكد من وضوح الصورة.");
+    return JSON.parse(text) as InvoiceData;
+  } catch (error: any) {
+    console.error("Error analyzing invoice (from Gemini):", error);
+
+    // 👈 هنا نخلي الخطأ الحقيقي يطلع بدل الرسالة العامة
+    if (error instanceof Error && error.message) {
+      throw new Error(error.message);
+    }
+
+    throw new Error("فشل في تحليل الفاتورة (خطأ غير معروف من النموذج).");
   }
 };
