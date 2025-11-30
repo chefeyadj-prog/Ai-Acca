@@ -46,7 +46,7 @@ export const analyzeInvoiceImage = async (
     const parts = images.map((img) => ({
       inlineData: {
         mimeType: img.mimeType,
-        data: img.base64, // تأكد أن هذا هو الـ base64 بدون "data:image/..;base64,"
+        data: img.base64,
       },
     }));
 
@@ -56,8 +56,7 @@ export const analyzeInvoiceImage = async (
         parts: [
           ...parts,
           {
-            text:
-              "قم بتحليل صور الفاتورة واستخرج البيانات المطلوبة باللغة العربية كـ JSON فقط.",
+            text: "قم بتحليل صور الفاتورة واستخرج البيانات المطلوبة فقط بصيغة JSON.",
           },
         ],
       },
@@ -71,21 +70,15 @@ export const analyzeInvoiceImage = async (
     // حسب الكود الأصلي من Google AI Studio: response.text هي الخاصية الصحيحة
     const text = response.text;
 
-    console.log("Raw Gemini response:", text);
+    console.log("Gemini Response Raw:", text);
 
     if (!text) {
       throw new Error("لم يتم استلام أي بيانات من النموذج.");
     }
 
-    return JSON.parse(text) as InvoiceData;
+    return JSON.parse(text);
   } catch (error: any) {
-    console.error("Error analyzing invoice (from Gemini):", error);
-
-    // 👈 هنا نخلي الخطأ الحقيقي يطلع بدل الرسالة العامة
-    if (error instanceof Error && error.message) {
-      throw new Error(error.message);
-    }
-
-    throw new Error("فشل في تحليل الفاتورة (خطأ غير معروف من النموذج).");
+    console.error("Error analyzing invoice:", error);
+    throw new Error(error?.message || "فشل في تحليل الفاتورة.");
   }
 };
